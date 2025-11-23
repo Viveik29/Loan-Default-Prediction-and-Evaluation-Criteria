@@ -1,0 +1,352 @@
+PHASE-1 — Understanding the Problem
+✔ Goal
+
+Predict likelihood that a customer will default on a loan.
+
+✔ Input Features (example)
+
+Applicant Income
+
+Employment length
+
+Credit score
+
+Debt-to-Income
+
+Loan amount
+
+Interest rate
+
+Purpose
+
+Collateral
+
+Existing loans
+
+Payment history, etc.
+
+✔ Target
+
+default = 0 (no), 1 (yes)
+
+PHASE-2 — EDA & DATA PREPROCESSING
+
+✅ STEP-1: EDA Roadmap (Detailed)
+1. Check Basic Information
+
+df.shape
+
+df.info()
+
+Data types
+
+Memory usage
+
+Unique count in each column
+
+2. Check Missing Values
+
+df.isnull().sum()
+
+Missing % feature-wise
+
+Identify:
+
+MCAR (missing completely at random)
+
+MAR
+
+MNAR
+
+3. Check Target Variable Distribution
+
+value_counts() of default
+
+% distribution (imbalance detection)
+
+Plot bar chart
+
+4. Explore Numerical Features
+
+Distribution plots (histogram, kde)
+
+Identify:
+
+skewness
+
+outliers (IQR, boxplot)
+
+normality
+
+Correlation heatmap
+
+5. Explore Categorical Features
+
+Count plots
+
+Frequency distribution
+
+Relationship with target using:
+
+Groupby mean default rate
+
+Chi-square test (if needed)
+
+6. Bi-variate Analysis
+
+To understand feature → target relationship.
+
+Examples:
+
+income vs default
+
+credit_score vs default
+
+loan_amount vs default
+
+DTI vs default
+
+Use:
+
+boxplots
+
+scatterplots
+
+violin plots
+
+pivot tables
+
+7. Multivariate Analysis
+
+Correlation heatmap
+
+Pairplots for important variables
+
+Clustering patterns (optional)
+
+8. Detect Outliers
+
+Use:
+
+IQR Method (for income, credit score, loan amount)
+
+Z-score (for interest rate)
+
+log-transform strategy for heavily skewed features
+
+9. Data Imbalance Detection
+
+Default rate < 20%? (Most likely)
+
+Plan techniques:
+
+Oversampling (SMOTE)
+
+Undersampling
+
+Class weights (preferred)
+
+Focal loss (advanced)
+
+PHASE-3 — Feature Engineering
+
+After EDA, you will create:
+
+✔ Numerical Features
+
+Normalization / scaling
+
+Log transform for skewed
+
+Create features like:
+
+EMI
+
+Debt-to-income ratio
+
+Interest-to-income ratio
+
+Credit score bucket
+
+✔ Categorical Features
+
+One-hot encoding
+
+Target encoding (careful with leakage)
+
+Rare category grouping
+
+✔ Feature Selection
+
+Mutual information
+
+Chi-square
+
+Tree-based feature importance
+
+Permutation importance
+
+SHAP values
+
+PHASE-4 — Model Development
+
+Use multiple models:
+
+⭐ Baseline
+
+Logistic Regression
+
+Decision Tree
+
+⭐ Advanced
+
+Random Forest
+
+XGBoost
+
+LightGBM (usually best for tabular data)
+
+CatBoost (handles categorical automatically)
+
+⭐ Handle Class Imbalance
+
+class_weight = balanced
+
+SMOTE
+
+ADASYN
+
+PHASE-5 — Evaluation Metrics
+
+Because data is imbalanced, accuracy is useless.
+
+Use:
+
+AUC-ROC
+
+Precision
+
+Recall
+
+F1-Score
+
+PR-AUC (important when defaults are rare)
+
+Confusion matrix
+
+KS statistic (common in banking)
+
+PHASE-6 — Model Interpretation
+
+Explain to business:
+
+Which features increase default risk
+
+SHAP value plots (best for interviews)
+
+Partial Dependence Plots (PDP)
+
+Threshold tuning to minimize risk
+
+PHASE-7 — System Design / MLOps
+✔ Deployment Architecture
+
+Python model → Docker → AWS EC2 / ECS / Lambda
+
+Model stored in S3
+
+Feature store (Feast or custom)
+
+API using FastAPI
+
+Reverse proxy with Nginx
+
+CI/CD using GitHub Actions
+
+✔ Canary Deployment
+
+Deploy new model to 10% traffic
+
+Compare performance with current model
+
+Promote only if metrics are stable
+
+If bad → automatic rollback
+
+✔ ML Monitoring Strategy
+
+Monitor:
+
+Data drift
+
+Prediction drift
+
+Feature drift
+
+Performance drop
+
+Latency
+
+API failure rates
+
+Using:
+
+EvidentlyAI
+
+Prometheus + Grafana
+
+✔ Load & Stress Testing
+
+Use:
+
+Locust
+
+JMeter
+
+Target:
+
+throughput
+
+latency p95, p99
+
+concurrency
+
+✔ ML Training Audit & Tracking
+
+Track:
+
+hyperparameters
+
+metrics
+
+model version
+
+data version
+
+experiment notes
+
+Tools:
+
+MLflow
+
+Weights & Biases
+
+✔ Continuous Delivery Framework
+
+Stages:
+
+Data Validation
+
+Feature Engineering Pipeline
+
+Train → Evaluate
+
+Auto select best model
+
+Register model
+
+Deploy to staging
+
+Canary release
+
+Promotion to production
