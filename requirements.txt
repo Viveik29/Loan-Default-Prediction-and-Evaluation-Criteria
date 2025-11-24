@@ -1,0 +1,11 @@
+boto3
+pandas
+numpy
+mlflow
+flask
+scikit-learn
+dvc[s3] #installed manually
+ipykernel
+xgboost
+pytest
+awscli

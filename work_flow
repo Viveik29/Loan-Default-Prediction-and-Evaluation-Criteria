@@ -350,3 +350,15 @@ Deploy to staging
 Canary release
 
 Promotion to production
+
+
+Best Practice for Two-Dataset Setup (What Interviewers Want)
+
+A perfect interview answer:
+
+“We had two datasets: (1) customer-level information and (2) transaction/bureau history.
+First we identified the grain mismatch — dataset 2 had multiple rows per customer.
+So we aggregated dataset 2 into meaningful behavioral features (mean delay, number of delinquent payments, inquiry frequency).
+Then merged into the main dataset on ID.
+During EDA, we checked missingness, outliers, and relationship with default.
+Finally we used engineered features with LightGBM and evaluated using ROC-AUC and KS-statistic.”
