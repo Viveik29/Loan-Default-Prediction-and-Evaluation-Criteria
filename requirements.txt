@@ -9,3 +9,5 @@ ipykernel
 xgboost
 pytest
 awscli
+
+-e .

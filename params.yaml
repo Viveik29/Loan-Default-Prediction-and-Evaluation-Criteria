@@ -1,0 +1,38 @@
+data_ingestion:
+  bucket_name: viveik-bucket
+  folder_path: Loan_Default_Prediction_Evaluation_Criteria 
+  file_name: Dataset.csv
+  #version_id: kBKfHLm3JVPnRHHr2zU8raEoCMrJbiYZ
+  Key: Loan_Default_Prediction_Evaluation_Criteria/Dataset.csv
+  aws_access_key_id: AKIAVRNDDVLT2CSO3EWG
+  aws_secret_access_key: dVUfRd5Jb3ey/0I9xKS4yEng2M+ghYzN/hmZctDZ 
+  region_name: eu-north-1 
+  test_size: 0.2
+  output_path: Raw_DATA/Dataset.csv
+  #source_url: "https://example.com/dataset.zip"
+  #local_dir: "Raw_data/Raw"
+
+data_preprocessing:
+  remove_stopwords: true
+  lowercase: true
+  max_len: 250
+
+feature_engineering:
+  ngram_range: [1, 2]
+  max_features: 10000
+  custom_spacy_model_path: "models/custom_spacy_model"
+
+training:
+  model_type: "logistic_regression"
+  test_size: 0.2
+  random_state: 42
+  max_iter: 100
+
+evaluate:
+  threshold: 0.5
+  metrics_output: "report/metrics.json"
+
+model_registration:
+  registry_path: "report/experiment_info.json"
+  model_name: "my_model"
+

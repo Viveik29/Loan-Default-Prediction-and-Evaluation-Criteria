@@ -1,0 +1,7 @@
+[core]
+    remote = myremote
+['remote "myremote"']
+    url = s3://viveik-bucket/Loan_Default_Prediction_Evaluation_Criteria
+    access_key_id = AKIAVRNDDVLT2CSO3EWG
+    secret_access_key = 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
+    region = eu-north-1
