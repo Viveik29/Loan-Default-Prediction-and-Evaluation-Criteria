@@ -1,0 +1,56 @@
+schema: '2.0'
+stages:
+  data_ingestion:
+    cmd: python src/Data_ingestion.py
+    deps:
+    - path: src/Data_ingestion.py
+      hash: md5
+      md5: cbdecc92df224cc3200d40b2306b63a1
+      size: 1690
+    params:
+      params.yaml:
+        data_ingestion:
+          bucket_name: viveik-bucket
+          folder_path: Loan_Default_Prediction_Evaluation_Criteria
+          file_name: Dataset.csv
+          Key: Loan_Default_Prediction_Evaluation_Criteria/Dataset.csv
+          aws_access_key_id: AKIAVRNDDVLT2CSO3EWG
+          aws_secret_access_key: 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
+          region_name: eu-north-1
+          test_size: 0.2
+          output_path: Raw_DATA/Dataset.csv
+    outs:
+    - path: RAW_DATA/Raw/df_test.csv
+      hash: md5
+      md5: 2c2d825ebb1d07f84661f34912d70770
+      size: 5213665
+    - path: RAW_DATA/Raw/df_train.csv
+      hash: md5
+      md5: f420ca42df6dc06d291ed014538c31c9
+      size: 20836830
+  data_preprocessing:
+    cmd: python src/Data_preprocessing.py
+    deps:
+    - path: RAW_DATA/Raw/df_test.csv
+      hash: md5
+      md5: 2c2d825ebb1d07f84661f34912d70770
+      size: 5213665
+    - path: RAW_DATA/Raw/df_train.csv
+      hash: md5
+      md5: f420ca42df6dc06d291ed014538c31c9
+      size: 20836830
+    - path: src/data_preprocessing.py
+      hash: md5
+      md5: 3777272756294eb70ad00506d527d4d7
+      size: 6487
+    params:
+      params.yaml:
+        data_preprocessing:
+          remove_stopwords: true
+          lowercase: true
+          max_len: 250
+    outs:
+    - path: Raw_data/df_clean.csv
+      hash: md5
+      md5: 434873f2846ab16b50662fc113230045
+      size: 33859295
