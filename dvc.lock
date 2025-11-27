@@ -46,7 +46,6 @@ stages:
     params:
       params.yaml:
         data_preprocessing:
-          remove_stopwords: true
           lowercase: true
           max_len: 250
     outs:
@@ -54,3 +53,42 @@ stages:
       hash: md5
       md5: 434873f2846ab16b50662fc113230045
       size: 33859295
+  feature_engineering:
+    cmd: python src/feature_engineering.py
+    deps:
+    - path: Raw_data/df_clean.csv
+      hash: md5
+      md5: 434873f2846ab16b50662fc113230045
+      size: 33859295
+    - path: Raw_data/df_clean.csv
+      hash: md5
+      md5: 434873f2846ab16b50662fc113230045
+      size: 33859295
+    - path: src/feature_engineering.py
+      hash: md5
+      md5: 743c0ca06be6b909fde151c13d96a82e
+      size: 1262
+    params:
+      params.yaml:
+        feature_engineering:
+          ngram_range:
+          - 1
+          - 2
+          max_features: 10000
+    outs:
+    - path: RAW_DATA/Clearn_data/X_test.csv
+      hash: md5
+      md5: bb9ca5e84e50ba213a21f67f7ffe8bce
+      size: 6502158
+    - path: RAW_DATA/Clearn_data/X_train.csv
+      hash: md5
+      md5: 0555dde57013ec825e8629c53c3f68e5
+      size: 26007708
+    - path: RAW_DATA/Clearn_data/y_test.csv
+      hash: md5
+      md5: 8e63e6e4b2d7793839710957dac62d4d
+      size: 58500
+    - path: RAW_DATA/Clearn_data/y_train.csv
+      hash: md5
+      md5: 57158bafbf1344a27053291714908da9
+      size: 233970
