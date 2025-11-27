@@ -92,3 +92,30 @@ stages:
       hash: md5
       md5: 57158bafbf1344a27053291714908da9
       size: 233970
+  model_trainning:
+    cmd: python src/model_trainning.py
+    deps:
+    - path: RAW_DATA/Clearn_data/X_test.csv
+      hash: md5
+      md5: bb9ca5e84e50ba213a21f67f7ffe8bce
+      size: 6502158
+    - path: RAW_DATA/Clearn_data/X_train.csv
+      hash: md5
+      md5: 0555dde57013ec825e8629c53c3f68e5
+      size: 26007708
+    - path: src/model_trainning.py
+      hash: md5
+      md5: 09f75beb3fc2988b8b9c310ebc4414a0
+      size: 1278
+    params:
+      params.yaml:
+        model_trainning:
+          model_type: RandomForestClassifier
+          test_size: 0.2
+          random_state: 42
+          n_estimators: 100
+    outs:
+    - path: Models/model.pkl
+      hash: md5
+      md5: 4fc1dabeb406dd72b873cb4600c049ba
+      size: 86001582
