@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Default Prediction System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .results-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .results-content {
+            text-align: center;
+        }
+
+        .risk-indicator {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .risk-high {
+            background: #ffebee;
+            color: #c62828;
+            border: 3px solid #c62828;
+        }
+
+        .risk-low {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 3px solid #2e7d32;
+        }
+
+        .probability {
+            font-size: 1.5rem;
+            margin: 20px 0;
+            color: #333;
+        }
+
+        .feature-importance {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .feature-importance h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .feature-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .feature-name {
+            font-weight: 500;
+        }
+
+        .feature-score {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .feature-info {
+            margin-top: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .feature-info h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏦 Loan Default Prediction System</h1>
+            <p>Advanced Machine Learning Model to Assess Loan Default Risk</p>
+        </div>
+
+        <div class="main-content">
+            <div class="form-container">
+                <h2>Applicant Information</h2>
+                <form id="predictionForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="Client_Income">Annual Income ($)</label>
+                            <input type="number" id="Client_Income" name="Client_Income" required 
+                                   placeholder="e.g., 50000">
+                        </div>
+                        <div class="form-group">
+                            <label for="Credit_Amount">Loan Amount ($)</label>
+                            <input type="number" id="Credit_Amount" name="Credit_Amount" required
+                                   placeholder="e.g., 200000">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="Loan_Annuity">Monthly Payment ($)</label>
+                            <input type="number" id="Loan_Annuity" name="Loan_Annuity" required
+                                   placeholder="e.g., 1500">
+                        </div>
+                        <div class="form-group">
+                            <label for="Age_Days">Age (in days)</label>
+                            <input type="number" id="Age_Days" name="Age_Days" required
+                                   placeholder="e.g., 10950 (30 years)">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="Employed_Days">Employment Duration (days)</label>
+                            <input type="number" id="Employed_Days" name="Employed_Days" required
+                                   placeholder="e.g., 1825 (5 years)">
+                        </div>
+                        <div class="form-group">
+                            <label for="Child_Count">Number of Children</label>
+                            <input type="number" id="Child_Count" name="Child_Count" required
+                                   placeholder="e.g., 2">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="Score_Source_1">Credit Score 1</label>
+                            <input type="number" id="Score_Source_1" name="Score_Source_1" required
+                                   placeholder="300-850">
+                        </div>
+                        <div class="form-group">
+                            <label for="Score_Source_2">Credit Score 2</label>
+                            <input type="number" id="Score_Source_2" name="Score_Source_2" required
+                                   placeholder="300-850">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="Score_Source_3">Credit Score 3</label>
+                            <input type="number" id="Score_Source_3" name="Score_Source_3" required
+                                   placeholder="300-850">
+                        </div>
+                        <div class="form-group">
+                            <label for="Social_Circle_Default">Social Circle Defaults</label>
+                            <input type="number" id="Social_Circle_Default" name="Social_Circle_Default" required
+                                   placeholder="Number of known defaults">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="Car_Owned">Car Ownership</label>
+                            <select id="Car_Owned" name="Car_Owned" required>
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="House_Own">Home Ownership</label>
+                            <select id="House_Own" name="House_Own" required>
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="Client_Income_Type">Income Type</label>
+                            <select id="Client_Income_Type" name="Client_Income_Type" required>
+                                <option value="Working">Working</option>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Pension">Pension</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="Client_Education">Education Level</label>
+                            <select id="Client_Education" name="Client_Education" required>
+                                <option value="Secondary">Secondary</option>
+                                <option value="Higher">Higher</option>
+                                <option value="Incomplete">Incomplete</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Assess Default Risk</button>
+                </form>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing applicant data...</p>
+                </div>
+            </div>
+
+            <div class="results-container">
+                <h2>Risk Assessment Results</h2>
+                <div class="results-content" id="results">
+                    <p>Submit the form to see the risk assessment results.</p>
+                </div>
+
+                <div class="feature-info">
+                    <h3>📊 Key Risk Factors</h3>
+                    <ul class="feature-list">
+                        <li><strong>Income & Employment:</strong> Stable income and long employment reduce risk</li>
+                        <li><strong>Credit Scores:</strong> Higher scores across multiple bureaus indicate reliability</li>
+                        <li><strong>Loan Burden:</strong> High loan-to-income ratio increases default probability</li>
+                        <li><strong>Social Influence:</strong> Defaults in social circle can indicate higher risk</li>
+                        <li><strong>Assets:</strong> Car and home ownership show financial stability</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            
+            loading.style.display = 'block';
+            results.innerHTML = '<p>Analyzing applicant data...</p>';
+            
+            try {
+                const formData = new FormData(this);
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Display results
+                let riskClass = data.risk_level === 'high' ? 'risk-high' : 'risk-low';
+                let riskText = data.risk_level === 'high' ? '🚨 HIGH RISK' : '✅ LOW RISK';
+                
+                let resultsHTML = `
+                    <div class="risk-indicator ${riskClass}">
+                        ${riskText}
+                    </div>
+                    <div class="probability">
+                        Default Probability: <strong>${data.probability}%</strong>
+                    </div>
+                    <div class="prediction-result">
+                        Recommendation: <strong>${data.prediction}</strong>
+                    </div>
+                `;
+                
+                // Add feature importance
+                if (data.feature_importance) {
+                    resultsHTML += `
+                        <div class="feature-importance">
+                            <h3>Top Influencing Factors</h3>
+                    `;
+                    
+                    data.feature_importance.forEach(feature => {
+                        resultsHTML += `
+                            <div class="feature-item">
+                                <span class="feature-name">${feature[0]}</span>
+                                <span class="feature-score">${(feature[1] * 100).toFixed(1)}%</span>
+                            </div>
+                        `;
+                    });
+                    
+                    resultsHTML += `</div>`;
+                }
+                
+                results.innerHTML = resultsHTML;
+                
+            } catch (error) {
+                results.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        // Set some default values for testing
+        document.getElementById('Client_Income').value = '50000';
+        document.getElementById('Credit_Amount').value = '200000';
+        document.getElementById('Loan_Annuity').value = '1500';
+        document.getElementById('Age_Days').value = '10950';
+        document.getElementById('Employed_Days').value = '1825';
+        document.getElementById('Child_Count').value = '1';
+        document.getElementById('Score_Source_1').value = '650';
+        document.getElementById('Score_Source_2').value = '620';
+        document.getElementById('Score_Source_3').value = '680';
+        document.getElementById('Social_Circle_Default').value = '0';
+    </script>
+</body>
+</html>
