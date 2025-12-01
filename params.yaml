@@ -36,3 +36,36 @@ model_registration:
   registry_path: "report/experiment_info.json"
   model_name: "my_model"
 
+  
+# Model promotion configuration
+model_promotion:
+  # Model information
+  model_name: "loan-default-model"
+  metrics_path: "report/metrics.json"
+  
+  # Staging thresholds (minimum acceptable performance)
+  staging_thresholds:
+    accuracy: 0.75
+    precision: 0.70
+    recall: 0.65
+    f1_score: 0.70
+    auc: 0.75
+  
+  # Production thresholds (excellent performance)
+  production_thresholds:
+    accuracy: 0.85
+    precision: 0.80
+    recall: 0.75
+    f1_score: 0.80
+    auc: 0.85
+  
+  # Minimum samples for reliable evaluation
+  min_samples: 100
+  
+  # MLflow experiment
+  experiment_name: "Loan-defaulter-prediction-evaluation"
+
+# MLflow configuration
+mlflow:
+  tracking_uri: "http://127.0.0.1:5000"
+  registry_uri: "sqlite:///mlflow.db"

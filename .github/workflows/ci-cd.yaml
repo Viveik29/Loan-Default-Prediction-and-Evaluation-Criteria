@@ -45,7 +45,7 @@ jobs:
           CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
         run: python scripts/promote_model.py
 
-      - name: Run Flask app tests
+      - name: Run Flask app test
         if: success()
         env:
           CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
@@ -53,5 +53,6 @@ jobs:
         run: python -m unittest test/test_feature_engineering.py
         run: python -m unittest test/test_model_evaluation.py
         run: python -m unittest test/test_model_registry.py
-        
-       
+        run: python -m unittest test/test_flask_app.py
+
+     

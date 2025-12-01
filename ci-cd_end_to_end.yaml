@@ -1,0 +1,290 @@
+name: ML Pipeline CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      promote_model:
+        description: 'Promote model to production'
+        required: false
+        default: 'false'
+      model_version:
+        description: 'Model version to promote'
+        required: false
+
+env:
+  PYTHON_VERSION: '3.9'
+  DVC_REMOTE: 'remote-storage'
+
+jobs:
+  test-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for DVC
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.cache/pypoetry
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt', 'pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git gcc g++
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-xdist flake8 black isort mlflow dvc[s3]
+    
+    - name: Code quality checks
+      run: |
+        flake8 src/ --max-line-length=88 --extend-ignore=E203,W503
+        black src/ --check --verbose
+        isort src/ --check-only --profile black
+    
+    - name: Set up DVC
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      run: |
+        dvc remote add -d ${{ env.DVC_REMOTE }} ${{ secrets.DVC_REMOTE_URL }}
+        dvc pull
+    
+    - name: Run DVC pipeline
+      run: |
+        dvc repro --force-downstream
+    
+    - name: Run preprocessing tests
+      env:
+        CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
+        MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      run: |
+        python -m pytest tests/test_preprocessing.py -v --tb=short -n auto
+    
+    - name: Run feature engineering tests
+      env:
+        CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
+        MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      run: |
+        python -m pytest tests/test_feature_engineering.py -v --tb=short -n auto
+    
+    - name: Run model evaluation tests
+      env:
+        CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
+        MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      run: |
+        python -m pytest tests/test_model_evaluation.py -v --tb=short -n auto
+    
+    - name: Run model registry tests
+      env:
+        CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
+        MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      run: |
+        python -m pytest tests/test_model_registry.py -v --tb=short -n auto
+    
+    - name: Generate test coverage report
+      env:
+        CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
+        MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      run: |
+        python -m pytest tests/ -v --cov=src --cov-report=html --cov-report=xml --cov-report=term -n auto
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+    
+    - name: Validate DVC pipeline
+      run: |
+        dvc dag
+        dvc status
+    
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-reports
+        path: |
+          htmlcov/
+          test-results.xml
+        retention-days: 7
+
+  model-training:
+    runs-on: ubuntu-latest
+    needs: test-and-validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 45
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install mlflow boto3 dvc[s3]
+    
+    - name: Set up DVC and pull data
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      run: |
+        dvc remote add -d ${{ env.DVC_REMOTE }} ${{ secrets.DVC_REMOTE_URL }}
+        dvc pull
+    
+    - name: Execute full training pipeline
+      env:
+        MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+        MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
+        MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: |
+        echo "Starting full training pipeline..."
+        dvc repro --force
+        
+        echo "Checking pipeline outputs..."
+        dvc dag
+        dvc metrics diff HEAD~1
+        
+        echo "Pipeline execution completed successfully"
+    
+    - name: Run model validation
+      env:
+        MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      run: |
+        python -m pytest tests/test_model_validation.py -v --tb=short
+    
+    - name: Upload DVC artifacts
+      if: success()
+      uses: actions/upload-artifact@v3
+      with:
+        name: model-artifacts
+        path: |
+          models/
+          metrics/
+          params/
+        retention-days: 30
+
+  model-promotion:
+    runs-on: ubuntu-latest
+    needs: model-training
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.promote_model == 'true')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install mlflow boto3
+    
+    - name: Promote model to production
+      env:
+        MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+        MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
+        MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
+        MODEL_NAME: ${{ vars.MODEL_NAME || 'churn-prediction-model' }}
+        MODEL_VERSION: ${{ github.event.inputs.model_version || 'latest' }}
+      run: |
+        echo "Promoting model: $MODEL_NAME (version: $MODEL_VERSION)"
+        
+        python scripts/promote_model.py \
+          --model-name "$MODEL_NAME" \
+          --model-version "$MODEL_VERSION" \
+          --stage "Production" \
+          --validation-threshold 0.85
+        
+        echo "Model promotion completed"
+    
+    - name: Notify promotion success
+      if: success()
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"✅ Model promoted to Production!\\nModel: $MODEL_NAME\\nVersion: $MODEL_VERSION\\nCommit: ${{ github.sha }}\"}" \
+          $SLACK_WEBHOOK_URL
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: model-promotion
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to staging
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      run: |
+        echo "Deploying model to staging environment..."
+        # Add your deployment logic here
+        # Example: docker build, push to ECR, update ECS service
+        
+        echo "Staging deployment completed"
+
+  security-scan:
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run security scan
+      run: |
+        pip install bandit safety
+        bandit -r src/ -f json -o bandit-results.json
+        safety check -r requirements.txt --json > safety-results.json
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          bandit-results.json
+          safety-results.json
+        retention-days: 30
