@@ -26,6 +26,7 @@ jobs:
       - name: install dependencies
         run: |
           pip install -r requirements.txt
+          pip install pytest pytest-cov
 
       - name: run pipeline
         env:
@@ -33,26 +34,26 @@ jobs:
         run: |
           dvc repro
 
-      - name: Run model test
+      - name: Run model tests (pytest)
         env:
           CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
         run: |
-          python -m unittest test/test_model.py
+          pytest test/test_model.py -q
 
       - name: Promote model to production
         if: success()
         env:
           CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
-        run: python scripts/promote_model.py
+        run: |
+          python scripts/promote_model.py
 
-      - name: Run Flask app test
+      - name: Run all Flask + pipeline tests (pytest)
         if: success()
         env:
           CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
-        run: python -m unittest test/test_preprocessing.py
-        run: python -m unittest test/test_feature_engineering.py
-        run: python -m unittest test/test_model_evaluation.py
-        run: python -m unittest test/test_model_registry.py
-        run: python -m unittest test/test_flask_app.py
-
-     
+        run: |
+          pytest test/test_preprocessing.py -q
+          pytest test/test_feature_engineering.py -q
+          pytest test/test_model_evaluation.py -q
+          pytest test/test_model_registry.py -q
+          pytest test/test_flask_app.py -q
