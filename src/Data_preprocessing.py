@@ -176,11 +176,12 @@ def main():
     df_clean, preprocessors = preprocess_data(df, target="Default")
     print(df_clean.isnull().sum())
     #remove_stopwords = params["data_preprocessing"]["remove_stopwords"]
-    base_dir = r"D:\\Data Science case study\\-Loan-Default-Prediction-and-Evaluation-Criteria\\"
-    file_path = os.path.join(base_dir, "RAW_DATA", "df_clean.csv")
+    #base_dir = r"D:\\Data Science case study\\-Loan-Default-Prediction-and-Evaluation-Criteria\\"
+    os.makedirs("RAW_DATA",exist_ok=True)
+    file_path = os.path.join("RAW_DATA", "df_clean.csv")
     # df_clean = pd.read_csv(file_path)
     # print(text_train)
-    df_clean.to_csv(file_path)
+    df_clean.to_csv(file_path,index=False)
 
 if __name__ == '__main__':
     main()

@@ -26,7 +26,7 @@ class S3_connection:
         df = pd.read_csv(StringIO(obj['Body'].read().decode('utf-8')))
 
         logging.info("File successfully fetched from S3")
-        return df
+        #return df
 
     def download_file(self, folder_path, file_name, local_save_path):
         """

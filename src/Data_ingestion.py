@@ -33,9 +33,10 @@ def main():
 
 
     s3_obj = S3_connection(bucket_name,aws_access_key,aws_secrets)
-    df = s3_obj.fetch_data(folder_path,file_name)
+    s3_obj.fetch_data(folder_path,file_name)
     s3_obj.download_file(folder_path, file_name, local_save_path)
     #df= data_balancing(df)
+    df=pd.read_csv(local_save_path)
     df_train, df_test = train_test_split(df,test_size= test_size,random_state=42)
     output_path = os.path.join("RAW_DATA", "Raw")
     os.makedirs(output_path, exist_ok=True)
