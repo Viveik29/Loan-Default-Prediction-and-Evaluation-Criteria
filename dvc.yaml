@@ -10,14 +10,14 @@ stages:
     - data_ingestion
 
   data_preprocessing:
-    cmd: python src/Data_preprocessing.py
-    deps:
+  cmd: python src/Data_preprocessing.py
+  deps:
     - RAW_DATA/Raw/df_test.csv
     - RAW_DATA/Raw/df_train.csv
-    - src/data_preprocessing.py
-    outs:
+    - src/Data_preprocessing.py   # ✅ FIXED
+  outs:
     - RAW_DATA/df_clean.csv
-    params:
+  params:
     - data_preprocessing
 
     
