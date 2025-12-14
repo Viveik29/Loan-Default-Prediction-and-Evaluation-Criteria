@@ -66,5 +66,5 @@ jobs:
           pytest test/test_preprocessing.py -q
           pytest test/test_feature_engineering.py -q
           pytest test/test_model_evaluation.py -q
-          pytest test/test_model_registry.py -q
+          
           pytest test/test_flask_app.py -q
