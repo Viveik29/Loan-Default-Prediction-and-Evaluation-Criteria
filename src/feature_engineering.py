@@ -23,7 +23,8 @@ def data_split(df):
 
 def main():
     params = 'params.yaml'
-    file_path="RAW_DATA\df_clean.csv"
+    #file_path="RAW_DATA\df_clean.csv"
+    file_path = os.path.join("RAW_DATA","df_clean.csv")
     df = pd.read_csv(file_path)
     X_train, X_test, y_train, y_test = data_split(df)
 
