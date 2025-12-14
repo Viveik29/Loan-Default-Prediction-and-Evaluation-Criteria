@@ -34,7 +34,7 @@ stages:
     params:
       - feature_engineering
 
-  model_training:
+  model_trainning:
     cmd: python src/model_trainning.py
     deps:
       - RAW_DATA/Clearn_data/X_train.csv
@@ -43,7 +43,7 @@ stages:
     outs:
       - Models/model.pkl
     params:
-      - model_training
+      - model_trainning
 
   model_evaluation:
     cmd: python src/model_evaluation.py
