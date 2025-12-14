@@ -35,11 +35,11 @@ stages:
       - feature_engineering
 
   model_training:
-    cmd: python src/model_training.py
+    cmd: python src/model_trainning.py
     deps:
       - RAW_DATA/Clearn_data/X_train.csv
       - RAW_DATA/Clearn_data/X_test.csv
-      - src/model_training.py
+      - src/model_trainning.py
     outs:
       - Models/model.pkl
     params:
