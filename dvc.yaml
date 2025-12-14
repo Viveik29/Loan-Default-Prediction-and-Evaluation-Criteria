@@ -13,7 +13,8 @@ stages:
   data_preprocessing:
     cmd: python src/Data_preprocessing.py
     deps:
-      - RAW_DATA/Raw/df_ingested.csv
+      - RAW_DATA/Raw/df_train.csv
+      - RAW_DATA/Raw/df_test.csv
       - src/Data_preprocessing.py
     outs:
       - RAW_DATA/Clean_data/df_clean.csv
