@@ -35,7 +35,7 @@ def main():
     n_estimators = params["model_trainning"]["n_estimators"]
     random_state = params["model_trainning"]["random_state"]
     #file_path1 = "RAW_DATA/clearn_data/X_train.csv"
-    file_path=os.path.join("RAW_DATA","clearn_data")
+    file_path=os.path.join("RAW_DATA","Clearn_data")
     os.makedirs(file_path,exist_ok=True)
     file_path1 = os.path.join(file_path,"X_train.csv")
     #file_path2 = "RAW_DATA/clearn_data/y_train.csv"
