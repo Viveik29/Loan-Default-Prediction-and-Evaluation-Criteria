@@ -6,7 +6,7 @@ stages:
     outs:
       - RAW_DATA/Raw/df_train.csv
       - RAW_DATA/Raw/df_test.csv
-      - RAW_DATA/Raw/df_ingested.csv
+      
     params:
       - data_ingestion
 
