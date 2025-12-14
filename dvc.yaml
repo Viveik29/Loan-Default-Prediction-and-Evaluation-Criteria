@@ -27,18 +27,18 @@ stages:
       - RAW_DATA/df_clean.csv
       - src/feature_engineering.py
     outs:
-      - RAW_DATA/Clean_data/X_train.csv
-      - RAW_DATA/Clean_data/X_test.csv
-      - RAW_DATA/Clean_data/y_train.csv
-      - RAW_DATA/Clean_data/y_test.csv
+      - RAW_DATA/Clearn_data/X_train.csv
+      - RAW_DATA/Clearn_data/X_test.csv
+      - RAW_DATA/Clearn_data/y_train.csv
+      - RAW_DATA/Clearn_data/y_test.csv
     params:
       - feature_engineering
 
   model_training:
     cmd: python src/model_training.py
     deps:
-      - RAW_DATA/Clean_data/X_train.csv
-      - RAW_DATA/Clean_data/X_test.csv
+      - RAW_DATA/Clearn_data/X_train.csv
+      - RAW_DATA/Clearn_data/X_test.csv
       - src/model_training.py
     outs:
       - Models/model.pkl
@@ -49,8 +49,8 @@ stages:
     cmd: python src/model_evaluation.py
     deps:
       - Models/model.pkl
-      - RAW_DATA/Clean_data/X_test.csv
-      - RAW_DATA/Clean_data/y_test.csv
+      - RAW_DATA/Clearn_data/X_test.csv
+      - RAW_DATA/Clearn_data/y_test.csv
       - src/model_evaluation.py
     outs:
       - report/metrics.json
