@@ -10,4 +10,4 @@ xgboost
 pytest
 category-encoders==2.6.3
 
-#-e .
+-e .
