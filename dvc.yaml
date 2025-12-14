@@ -24,7 +24,7 @@ stages:
   feature_engineering:
     cmd: python src/feature_engineering.py
     deps:
-      - RAW_DATA/Clean_data/df_clean.csv
+      - RAW_DATA/df_clean.csv
       - src/feature_engineering.py
     outs:
       - RAW_DATA/Clean_data/X_train.csv
