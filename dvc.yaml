@@ -17,7 +17,7 @@ stages:
       - RAW_DATA/Raw/df_test.csv
       - src/Data_preprocessing.py
     outs:
-      - RAW_DATA/Clean_data/df_clean.csv
+      - RAW_DATA/df_clean.csv
     params:
       - data_preprocessing
 
