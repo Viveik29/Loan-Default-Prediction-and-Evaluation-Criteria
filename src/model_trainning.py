@@ -34,8 +34,10 @@ def main():
     params = params_load(params_path)
     n_estimators = params["model_trainning"]["n_estimators"]
     random_state = params["model_trainning"]["random_state"]
-    file_path1 = "RAW_DATA/clearn_data/X_train.csv"
-    file_path2 = "RAW_DATA/clearn_data/y_train.csv"
+    #file_path1 = "RAW_DATA/clearn_data/X_train.csv"
+    file_path1 = os.path.join("RAW_DATA","clearn_data","X_train.csv")
+    #file_path2 = "RAW_DATA/clearn_data/y_train.csv"
+    file_path2 = os.path.join("RAW_DATA","clearn_data","y_train.csv")
     df1 = pd.read_csv(file_path1)
     df2 = pd.read_csv(file_path2)
     y = df2.values.ravel()
