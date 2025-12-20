@@ -4,8 +4,6 @@ data_ingestion:
   file_name: Dataset.csv
   #version_id: kBKfHLm3JVPnRHHr2zU8raEoCMrJbiYZ
   Key: Loan_Default_Prediction_Evaluation_Criteria/Dataset.csv
-  aws_access_key_id: 
-  aws_secret_access_key: 
   region_name: eu-north-1 
   test_size: 0.2
   output_path: Raw_DATA/Dataset.csv
