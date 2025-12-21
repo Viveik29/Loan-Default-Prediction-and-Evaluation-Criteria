@@ -25,6 +25,7 @@ def main():
     bucket_name = params["data_ingestion"]["bucket_name"]
     file_name = params["data_ingestion"]["file_name"]
     folder_path = params['data_ingestion']['folder_path']
+    region = params['data_ingestion']['region_name']
     # aws_access_key = params["data_ingestion"]["aws_access_key_id"]
     # aws_secrets = params["data_ingestion"]["aws_secret_access_key"]
     test_size = params["data_ingestion"]["test_size"]
@@ -35,9 +36,9 @@ def main():
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
     AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION")
-    s3_obj = S3_connection(bucket_name,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY)
-    s3_obj.fetch_data(folder_path,file_name)
-    s3_obj.download_file(folder_path, file_name, local_save_path)
+    s3_obj = S3_connection(bucket_name,region)
+    s3_obj.fetch_data(folder_path,file_name,local_save_path)
+    #s3_obj.download_file(folder_path, file_name, local_save_path)
     #df= data_balancing(df)
     df=pd.read_csv(local_save_path)
     df_train, df_test = train_test_split(df,test_size= test_size,random_state=42)

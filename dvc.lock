@@ -5,8 +5,8 @@ stages:
     deps:
     - path: src/Data_ingestion.py
       hash: md5
-      md5: b3929195c5edb540c35e861c714e91eb
-      size: 1721
+      md5: 30ab1fc2f2f661d197912db1b667dbe4
+      size: 1984
     params:
       params.yaml:
         data_ingestion:
@@ -14,8 +14,6 @@ stages:
           folder_path: Loan_Default_Prediction_Evaluation_Criteria
           file_name: Dataset.csv
           Key: Loan_Default_Prediction_Evaluation_Criteria/Dataset.csv
-          aws_access_key_id:
-          aws_secret_access_key:
           region_name: eu-north-1
           test_size: 0.2
           output_path: Raw_DATA/Dataset.csv
@@ -39,7 +37,7 @@ stages:
       hash: md5
       md5: f420ca42df6dc06d291ed014538c31c9
       size: 20836830
-    - path: src/data_preprocessing.py
+    - path: src/Data_preprocessing.py
       hash: md5
       md5: 40ce0b1d2dc715182904717954ffbcc1
       size: 6533
@@ -56,18 +54,14 @@ stages:
   feature_engineering:
     cmd: python src/feature_engineering.py
     deps:
-    - path: Raw_data/df_clean.csv
-      hash: md5
-      md5: e9306874084a5bdf8d73f29a39b0faee
-      size: 33285500
-    - path: Raw_data/df_clean.csv
+    - path: RAW_DATA/df_clean.csv
       hash: md5
       md5: e9306874084a5bdf8d73f29a39b0faee
       size: 33285500
     - path: src/feature_engineering.py
       hash: md5
-      md5: 743c0ca06be6b909fde151c13d96a82e
-      size: 1262
+      md5: cda7b6f434409a37e5223a06d1f8dfa5
+      size: 1320
     params:
       params.yaml:
         feature_engineering:
@@ -105,8 +99,8 @@ stages:
       size: 25548587
     - path: src/model_trainning.py
       hash: md5
-      md5: 09f75beb3fc2988b8b9c310ebc4414a0
-      size: 1278
+      md5: e4590fbe6beb3aa47ac957a9e29d6ccd
+      size: 1488
     params:
       params.yaml:
         model_trainning:
@@ -150,10 +144,10 @@ stages:
   model_registry:
     cmd: python src/model_registry.py
     deps:
-    - path: report/experiment_info.json
+    - path: report/metrics.json
       hash: md5
-      md5: d973b4118dafa17577e3ce5ab74653aa
-      size: 95
+      md5: e725fafb89a29eb6c6f1655893b66459
+      size: 181
     - path: src/model_registry.py
       hash: md5
       md5: ad71e6ddc8160cc4acec64b8a7b4ffcd
