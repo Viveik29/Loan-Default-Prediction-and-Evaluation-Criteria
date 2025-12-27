@@ -32,8 +32,10 @@ model_evaluation:
 
 
 model_registry:
-  registry_path: "report/experiment_info.json"
-  model_name: "loan-default-model"
-  # Optional: Add tracking URI configuration
-  # tracking_uri: "http://127.0.0.1:5000"
+  registry_path: report/experiment_info.json
+  model_name: loan-default-model
+
+mlflow:
+  tracking_uri: http://127.0.0.1:5000
+
 
