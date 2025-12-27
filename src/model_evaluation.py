@@ -18,8 +18,11 @@ logger = logging.getLogger(__name__)
 def setup_mlflow():
     """Setup MLflow tracking with proper error handling"""
     try:
-        # Try to connect to MLflow server
-        mlflow.set_tracking_uri('http://127.0.0.1:5000')
+        # Try to connect to MLflow to remote server
+        remote_server_uri = "http://127.0.0.1:5000"
+        #mlflow.set_tracking_uri('http://127.0.0.1:5000')
+        mlflow.set_tracking_uri("remote_server_uri")
+        
         # Test connection by listing experiments (non-blocking)
         mlflow.search_experiments(max_results=1)
         logger.info("MLflow tracking server connected successfully")
