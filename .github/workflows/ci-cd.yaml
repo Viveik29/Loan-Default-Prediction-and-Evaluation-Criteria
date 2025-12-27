@@ -5,6 +5,9 @@ on:
     branches: [ main, develop ]
   pull_request:
 
+env:
+  ENABLE_MODEL_REGISTRY: false   # 🔥 Disable MLflow registry in CI
+
 jobs:
   project-testing:
     runs-on: ubuntu-latest
@@ -26,7 +29,6 @@ jobs:
         run: |
           aws --version
 
-      # 🔥 THIS IS THE FIX
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -39,7 +41,7 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov
 
-      - name: Run DVC pipeline
+      - name: Run DVC pipeline (no registry)
         env:
           CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
         run: |
@@ -51,8 +53,8 @@ jobs:
         run: |
           pytest test/test_model.py -q
 
-      - name: Promote model
-        if: success()
+      - name: Promote model (only if registry enabled)
+        if: success() && env.ENABLE_MODEL_REGISTRY == 'true'
         env:
           CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
         run: |
@@ -66,5 +68,4 @@ jobs:
           pytest test/test_preprocessing.py -q
           pytest test/test_feature_engineering.py -q
           pytest test/test_model_evaluation.py -q
-          
           pytest test/test_flask_app.py -q
