@@ -13,7 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 # Import the functions from your model registry module
 try:
-    from model_registry import (
+    from src.model_registry import (
         params_load,
         load_model_info,
         register_model,
