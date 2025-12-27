@@ -7,6 +7,8 @@ import tempfile
 import sys
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
+from src.Data_preprocessing import winsorize
+
 
 # Add the src directory to the path to import your modules
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))

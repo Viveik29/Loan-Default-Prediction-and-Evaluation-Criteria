@@ -5,6 +5,8 @@ import tempfile
 import yaml
 from unittest.mock import Mock, patch, MagicMock
 import sys
+from src.model_registry import load_params   # or alias
+
 
 # Add the src directory to the path to import your modules
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
