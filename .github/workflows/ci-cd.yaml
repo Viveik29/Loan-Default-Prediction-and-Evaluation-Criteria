@@ -7,7 +7,7 @@ on:
 
 env:
   ENABLE_MODEL_REGISTRY: false
-  DVC_REMOTE: 'origin'  # Replace with your actual remote name if different
+  DVC_REMOTE: 'Loan_Default_Prediction_Evaluation_Criteria'  # Change if your DVC remote name is different
 
 jobs:
   build-test-deploy:
@@ -29,10 +29,11 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
           pip install pytest pytest-cov
-          pip install "dvc[s3]"  # adjust if your remote differs, e.g. dvc[azure], dvc[gdrive]
+          pip install "dvc[s3]"  # Adjust if your remote differs, e.g. dvc[azure], dvc[gdrive]
 
+      # Configure AWS credentials only if secrets are set (using env vars in if condition)
       - name: Configure AWS Credentials
-        if: ${{ secrets.AWS_ACCESS_KEY_ID && secrets.AWS_SECRET_ACCESS_KEY }}
+        if: ${{ secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' && secrets.AWS_DEFAULT_REGION != '' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -40,44 +41,45 @@ jobs:
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: Pull DVC data and models from remote cache
-        run: |
-          dvc pull --remote $DVC_REMOTE
-        # Critical: get data/cache before pipeline run
+        run: dvc pull --remote $DVC_REMOTE
 
       - name: Validate DVC pipeline status (optional)
         run: dvc status --remote $DVC_REMOTE
 
       - name: Reproduce DVC pipeline
-        run: |
-          dvc repro
+        run: dvc repro
 
       - name: Run tests (unit & integration)
-        run: |
-          pytest --maxfail=1 --disable-warnings -q
+        run: pytest --maxfail=1 --disable-warnings -q
 
-      - name: Push DVC outputs to remote
+      - name: Push DVC outputs to remote (only if tests passed)
         if: success()
-        run: |
-          dvc push --remote $DVC_REMOTE
+        run: dvc push --remote $DVC_REMOTE
 
-      - name: Promote model (conditional on env variable)
+      - name: Promote model (conditional on ENABLE_MODEL_REGISTRY env variable)
         if: success() && env.ENABLE_MODEL_REGISTRY == 'true'
-        run: |
-          python scripts/promote_model.py
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: python scripts/promote_model.py
 
       - name: Cleanup DVC cache (optional)
         if: always()
-        run: |
-          dvc gc --workspace --force --all-branches --all-tags
+        run: dvc gc --workspace --force --all-branches --all-tags
 
-    # Cache pip packages for faster runs
-    # GitHub setup-python action cache param covers pip cache,
-    # but can add explicit caching if needed for DVC cache:
-    #
+    # Cache pip packages explicitly to speed up runs
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+    # Optionally add cache for DVC cache folder if your builds frequently pull large datasets:
     # - uses: actions/cache@v3
     #   with:
-    #     path: ~/.cache/pip
-    #     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    #     path: ~/.dvc/cache
+    #     key: ${{ runner.os }}-dvc-cache
     #     restore-keys: |
-    #       ${{ runner.os }}-pip-
-
+    #       ${{ runner.os }}-dvc-cache-
