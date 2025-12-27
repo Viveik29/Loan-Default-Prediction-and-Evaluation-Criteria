@@ -1,52 +1,83 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
 
 env:
   ENABLE_MODEL_REGISTRY: false
+  DVC_REMOTE: 'origin'  # Replace with your actual remote name if different
 
 jobs:
-  project-testing:
+  build-test-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           cache: 'pip'
 
-      - name: Upgrade pip tooling
+      - name: Upgrade pip and install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+          pip install "dvc[s3]"  # adjust if your remote differs, e.g. dvc[azure], dvc[gdrive]
 
-      - name: Configure AWS credentials
+      - name: Configure AWS Credentials
+        if: ${{ secrets.AWS_ACCESS_KEY_ID && secrets.AWS_SECRET_ACCESS_KEY }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-      - name: Install dependencies
+      - name: Pull DVC data and models from remote cache
         run: |
-          pip install -r requirements.txt
-          pip install pytest pytest-cov
+          dvc pull --remote $DVC_REMOTE
+        # Critical: get data/cache before pipeline run
 
-      # ✅ Optional sanity check only
-      - name: Validate DVC pipeline
+      - name: Validate DVC pipeline status (optional)
+        run: dvc status --remote $DVC_REMOTE
+
+      - name: Reproduce DVC pipeline
         run: |
-          dvc status
+          dvc repro
 
-      - name: Run unit & integration tests
+      - name: Run tests (unit & integration)
         run: |
-          pytest -q
+          pytest --maxfail=1 --disable-warnings -q
 
-      - name: Promote model (only if registry enabled)
+      - name: Push DVC outputs to remote
+        if: success()
+        run: |
+          dvc push --remote $DVC_REMOTE
+
+      - name: Promote model (conditional on env variable)
         if: success() && env.ENABLE_MODEL_REGISTRY == 'true'
         run: |
           python scripts/promote_model.py
+
+      - name: Cleanup DVC cache (optional)
+        if: always()
+        run: |
+          dvc gc --workspace --force --all-branches --all-tags
+
+    # Cache pip packages for faster runs
+    # GitHub setup-python action cache param covers pip cache,
+    # but can add explicit caching if needed for DVC cache:
+    #
+    # - uses: actions/cache@v3
+    #   with:
+    #     path: ~/.cache/pip
+    #     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-pip-
+
