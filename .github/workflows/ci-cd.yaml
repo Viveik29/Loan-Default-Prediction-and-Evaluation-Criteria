@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  ENABLE_MODEL_REGISTRY: false   # 🔥 Disable MLflow registry in CI
+  ENABLE_MODEL_REGISTRY: false   # Disable MLflow registry in CI
 
 jobs:
   project-testing:
@@ -47,11 +47,12 @@ jobs:
         run: |
           dvc repro
 
-      - name: Run model tests
+      # ✅ Run ALL tests using pytest auto-discovery
+      - name: Run unit & integration tests
         env:
           CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
         run: |
-          pytest test/test_model.py -q
+          pytest -q
 
       - name: Promote model (only if registry enabled)
         if: success() && env.ENABLE_MODEL_REGISTRY == 'true'
@@ -59,13 +60,3 @@ jobs:
           CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
         run: |
           python scripts/promote_model.py
-
-      - name: Run full test suite
-        if: success()
-        env:
-          CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
-        run: |
-          pytest test/test_preprocessing.py -q
-          pytest test/test_feature_engineering.py -q
-          pytest test/test_model_evaluation.py -q
-          pytest test/test_flask_app.py -q
