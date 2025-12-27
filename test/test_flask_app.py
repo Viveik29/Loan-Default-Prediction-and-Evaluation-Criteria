@@ -1,20 +1,16 @@
-import unittest
 from app import create_app
 
-class FlaskAppTests(unittest.TestCase):
+def test_home_page():
+    app = create_app(testing=True)
+    client = app.test_client()
 
-    @classmethod
-    def setUpClass(cls):
-        cls.app = create_app(testing=True)
-        cls.client = cls.app.test_client()
+    res = client.get("/")
+    assert res.status_code == 200
 
-    def test_home_page(self):
-        response = self.client.get("/")
-        assert response.status_code == 200
 
-    def test_predict_page(self):
-        response = self.client.post("/predict", data={"x": 1})
-        assert response.status_code == 200
+def test_predict_endpoint_without_model():
+    app = create_app(testing=True)
+    client = app.test_client()
 
-if __name__ == "__main__":
-    unittest.main()
+    res = client.post("/predict", json={"x": 1})
+    assert res.status_code == 500

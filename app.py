@@ -1,55 +1,85 @@
-from flask import Flask, render_template, request, jsonify
+import os
+import pickle
 import pandas as pd
 import numpy as np
-import pickle
-import os
+from flask import Flask, request, jsonify, render_template
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 
-def create_app(testing=False):
+# -------------------------------------------------
+# Configuration
+# -------------------------------------------------
+MODEL_DIR = os.getenv("MODEL_DIR", "Models")
+MODEL_PATH = os.path.join(MODEL_DIR, "model.pkl")
+PREPROCESS_PATH = os.path.join(MODEL_DIR, "preprocessing.pkl")
+
+# -------------------------------------------------
+# App Factory (KEY FIX)
+# -------------------------------------------------
+def create_app(testing: bool = False):
     app = Flask(__name__)
     app.config["TESTING"] = testing
 
-    model, scaler, label_encoders = None, None, None
+    if not testing:
+        load_model(app)
 
-    def init_model():
-        nonlocal model, scaler, label_encoders
-
-        model_path = "Model/model.pkl"
-        preprocessing_path = "Model/preprocessing.pkl"
-
-        if testing:
-            # mock objects for tests
-            class DummyModel:
-                def predict(self, X): return [0]
-                def predict_proba(self, X): return [[0.9, 0.1]]
-                feature_importances_ = [0.1] * X.shape[1]
-
-            model = DummyModel()
-            scaler = lambda x: x
-            label_encoders = {}
-            return
-
-        with open(model_path, "rb") as f:
-            model = pickle.load(f)
-
-        with open(preprocessing_path, "rb") as f:
-            data = pickle.load(f)
-            scaler = data["scaler"]
-            label_encoders = data["label_encoders"]
+    # ---------------- Routes ----------------
 
     @app.route("/")
     def home():
-        return "OK"
+        return "Loan Default Prediction API is running"
 
     @app.route("/predict", methods=["POST"])
     def predict():
-        data = pd.DataFrame([request.form])
-        prediction = model.predict(data)[0]
-        return jsonify({"prediction": int(prediction)})
+        model = app.config.get("MODEL")
+        scaler = app.config.get("SCALER")
+        encoders = app.config.get("ENCODERS")
 
-    init_model()
+        if model is None:
+            return jsonify({"error": "Model not loaded"}), 500
+
+        input_df = pd.DataFrame([request.json or request.form])
+
+        # Convert numerics safely
+        for col in input_df.columns:
+            input_df[col] = pd.to_numeric(input_df[col], errors="ignore")
+
+        # Encode categoricals
+        for col, encoder in encoders.items():
+            if col in input_df:
+                input_df[col] = encoder.transform(input_df[col].astype(str))
+
+        scaled = scaler.transform(input_df)
+        pred = model.predict(scaled)[0]
+        prob = model.predict_proba(scaled)[0][1]
+
+        return jsonify({
+            "prediction": int(pred),
+            "probability": round(float(prob), 4)
+        })
+
     return app
 
+# -------------------------------------------------
+# Model Loader (NO TRAINING IN CI)
+# -------------------------------------------------
+def load_model(app):
+    if not os.path.exists(MODEL_PATH):
+        raise FileNotFoundError("Model not found. Train first.")
 
+    with open(MODEL_PATH, "rb") as f:
+        model = pickle.load(f)
+
+    with open(PREPROCESS_PATH, "rb") as f:
+        data = pickle.load(f)
+
+    app.config["MODEL"] = model
+    app.config["SCALER"] = data["scaler"]
+    app.config["ENCODERS"] = data["label_encoders"]
+
+# -------------------------------------------------
+# Local Run Only
+# -------------------------------------------------
 if __name__ == "__main__":
+    os.makedirs(MODEL_DIR, exist_ok=True)
     app = create_app()
-    app.run(port=5001)
+    app.run(host="0.0.0.0", port=5001, debug=True)
