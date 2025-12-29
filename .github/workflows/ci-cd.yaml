@@ -1,13 +1,13 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches: [main, develop]
   pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
 
 env:
-  ENABLE_MODEL_REGISTRY: false
-  DVC_REMOTE: 'Loan_Default_Prediction_Evaluation_Criteria'  # Change if your DVC remote name is different
+  ENABLE_MODEL_REGISTRY: false   # Explicitly disabled in CI
 
 jobs:
   build-test-deploy:
@@ -15,71 +15,45 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      # Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python 3.10
+      # Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           cache: 'pip'
 
-      - name: Upgrade pip and install dependencies
+      # Upgrade pip tools
+      - name: Upgrade pip tooling
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
           pip install pytest pytest-cov
           pip install "dvc[s3]"  # Adjust if your remote differs, e.g. dvc[azure], dvc[gdrive]
 
-      # Configure AWS credentials only if secrets exist (correct if syntax)
-      - name: Configure AWS Credentials
-        if: ${{ secrets.AWS_ACCESS_KEY_ID && secrets.AWS_SECRET_ACCESS_KEY && secrets.AWS_DEFAULT_REGION }}
+      # Configure AWS credentials (read-only usage)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-      - name: Pull DVC data and models from remote cache
-        run: dvc pull --remote $DVC_REMOTE
+      # Install project dependencies
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
 
-      - name: Validate DVC pipeline status (optional)
-        run: dvc status --remote $DVC_REMOTE
+      # Validate DVC pipeline (no execution)
+      - name: Validate DVC pipeline
+        run: |
+          dvc status
 
-      - name: Reproduce DVC pipeline
-        run: dvc repro
-
-      - name: Run tests (unit & integration)
-        run: pytest --maxfail=1 --disable-warnings -q
-
-      - name: Push DVC outputs to remote (only if tests passed)
-        if: success()
-        run: dvc push --remote $DVC_REMOTE
-
-      - name: Promote model (conditional on ENABLE_MODEL_REGISTRY env variable)
-        if: success() && env.ENABLE_MODEL_REGISTRY == 'true'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-        run: python scripts/promote_model.py
-
-      - name: Cleanup DVC cache (optional)
-        if: always()
-        run: dvc gc --workspace --force --all-branches --all-tags
-
-      # Cache pip packages explicitly to speed up runs
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      # Optionally add cache for DVC cache folder if your builds frequently pull large datasets:
-      # - uses: actions/cache@v3
-      #   with:
-      #     path: ~/.dvc/cache
-      #     key: ${{ runner.os }}-dvc-cache
-      #     restore-keys: |
-      #       ${{ runner.os }}-dvc-cache-
+      # Run tests with coverage
+      - name: Run unit & integration tests
+        run: |
+          pytest test/ --cov=src --cov-report=term-missing -q
